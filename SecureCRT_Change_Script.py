@@ -56,64 +56,85 @@ def main():
 
 
 def multi_device_jump(test_type):
+    new_device = True
+
     # Opens dialog to select device list text file
-    device_list = open(crt.Dialog.FileOpenDialog(title="Please select a Device List text file",
+    device_types = crt.Dialog.Prompt("Will you have more than one type of device? (IOS, NX-OS, etc.):\n 1. Yes\n 2. No",
+                                     "Please Select Yes or No", "2", False)
+
+    if device_types == "1":
+        crt.Dialog.MessageBox("Must have separate device list and command list for each group of devices!")
+
+    while new_device == True:
+
+        # Opens dialog to select device list text file
+        device_list = open(crt.Dialog.FileOpenDialog(title="Please select a Device List text file",
                                                  filter="Text Files (*.txt)|*.txt||")).read().splitlines()
-    # Remove any blank lines
-    device_list = filter(None, device_list)
+        # Remove any blank lines
+        device_list = filter(None, device_list)
 
-    # Remove white space from entries...device names cannot contain white space
-    device_list = [x.strip(' ') for x in device_list]
+        # Remove white space from entries...device names cannot contain white space
+        device_list = [x.strip(' ') for x in device_list]
 
-    if device_list == "":
-        crt.Dialog.MessageBox("Script Cancelled!")
-        return
+        if device_list == "":
+            crt.Dialog.MessageBox("Script Cancelled!")
+            return
 
-    # Opens dialog to select command list text file
-    command_list = open(crt.Dialog.FileOpenDialog(title="Please select a Command List text file",
-                                                  filter="Text Files (*.txt)|*.txt||")).read().splitlines()
-    if command_list == "":
-        crt.Dialog.MessageBox("Script Cancelled!")
-        return
+        # Opens dialog to select command list text file
+        command_list = open(crt.Dialog.FileOpenDialog(title="Please select a Command List text file",
+                                                    filter="Text Files (*.txt)|*.txt||")).read().splitlines()
+        if command_list == "":
+            crt.Dialog.MessageBox("Script Cancelled!")
+            return
 
-    # Set jump box prompt.  NA> for HPNA Proxy
-    jump_prompt = crt.Dialog.Prompt("What is the base prompt for jump box?:",
+        # Set jump box prompt.  NA> for HPNA Proxy
+        jump_prompt = crt.Dialog.Prompt("What is the base prompt for jump box?:",
                                     "Please enter prompt as shown on Jump Box",
                                     "NA>", False)
-    for n, elem in enumerate(device_list):
-        # Set file name for PRE or POST test. Files are saved to same directory that script is using.
+        for n, elem in enumerate(device_list):
+            # Set file name for PRE or POST test. Files are saved to same directory that script is using.
 
-        filename = name_file(test_type, elem)
+            filename = name_file(test_type, elem)
 
-        # Send return to for NA> that script is waiting for...
-        crt.Screen.Send('\r')
-        crt.Screen.WaitForString(jump_prompt)
+            # Send return to for NA> that script is waiting for...
+            crt.Screen.Send('\r')
+            crt.Screen.WaitForString(jump_prompt)
 
-        # Connect to element from device list
-        crt.Screen.Send("connect " + elem + " " + '\r')
+            # Connect to element from device list
+            crt.Screen.Send("connect " + elem + " " + '\r')
 
-        # Wait for connection
-        crt.Screen.WaitForString('#')
-        crt.Screen.Send('\r')
-        crt.Screen.WaitForString('#')
-        crt.Screen.Send('\r')
-        crt.Screen.WaitForString('#')
+            # Wait for connection
+            crt.Screen.WaitForString('#')
+            crt.Screen.Send('\r')
+            crt.Screen.WaitForString('#')
+            crt.Screen.Send('\r')
+            crt.Screen.WaitForString('#')
 
-        # Set prompt for script to expect
-        screenrow = crt.Screen.CurrentRow - 1
-        prompt_string = crt.Screen.Get(screenrow, 1, screenrow, 40)
-        prompt_string = prompt_string.rstrip('\r\n')
-        prompt_string = prompt_string.strip()
+            # Set prompt for script to expect
+            screenrow = crt.Screen.CurrentRow - 1
+            prompt_string = crt.Screen.Get(screenrow, 1, screenrow, 40)
+            prompt_string = prompt_string.rstrip('\r\n')
+            prompt_string = prompt_string.strip()
 
-        crt.Screen.Send('terminal width 100 \r')
-        crt.Screen.WaitForString('terminal width 100')
+            crt.Screen.Send('terminal width 100 \r')
+            crt.Screen.WaitForString('terminal width 100')
 
-        # Work through command list file - Call command()
-        command(filename, command_list, prompt_string)
+            # Work through command list file - Call command()
+            command(filename, command_list, prompt_string)
 
-        # After all commands are parsed thhe script exits device and for loop continues through device list
-        # crt.Sleep(2000) <- Leftover Test Piece
-        crt.Screen.Send("exit " + '\r')
+            # After all commands are parsed thhe script exits device and for loop continues through device list
+            # crt.Sleep(2000) <- Leftover Test Piece
+            crt.Screen.Send("exit " + '\r')
+        if device_types == "2":
+            new_device = False
+        elif device_types == "1":
+            temp_device = crt.Dialog.Prompt("Do you have an additional device type?:\n 1. Yes\n 2. No",
+                                     "Please Select Yes or No", "2", False)
+            if temp_device == "1":
+                new_device = True
+            else:
+                new_device = False
+
     if test_type == "2":
         multi_compare(device_list)
 
